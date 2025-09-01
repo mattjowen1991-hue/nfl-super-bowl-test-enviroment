@@ -1,0 +1,16 @@
+{
+  "season": "2025",
+  "repoUrl": "https://github.com/your/repo",
+  "highlight": {
+    "winner": "ben",
+    "spoon": "matt"
+  },
+  "honorary": [
+    { "year": 2025, "player": "ben" }
+  ],
+  "perfectWeekPoints": {
+    "1": 6,
+    "2": 6,
+    "3": 6
+  }
+}
