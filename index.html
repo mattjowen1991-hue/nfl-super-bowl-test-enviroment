@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🏈 Super Bowl LIX — League Table</title>
+  <link rel="icon" type="image/png" sizes="48x48" href="Assets/nfl-favicon2.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preload" as="image" href="Assets/football-field.jpeg" />
+
+  <style>
+  /* ---------------- Fonts & base ---------------- */
+  @font-face {
+    font-family: 'Freshman';
+    src: url('Assets/Freshman.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  /* Root stays black; body is transparent so the bg layer shows */
+  html { height: 100%; background:#000; }
+  body{
+    height: 100%;
+    min-height: 100dvh;
+    background: transparent;
+    overscroll-behavior: none;
+  }
+
+  /* Fixed background that doesn't “jiggle” on mobile */
+  .site-bg{
+    position: fixed;
+    top: 0; left: 0;
+    width: 100lvw;               /* stable with mobile address bar changes */
+    height: 100lvh;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      linear-gradient(to bottom, rgba(0,0,0,.72), rgba(0,0,0,.62), rgba(0,0,0,.86)),
+      url('Assets/football-field.jpeg');
+    background-position: center center, center center;
+    background-size: cover, cover;
+    background-repeat: no-repeat, no-repeat;
+    backface-visibility: hidden;
+    will-change: transform;
+    transform: translateZ(0);
+  }
+  /* Fallbacks for browsers without l* units */
+  @supports not (height: 100lvh){
+    .site-bg{ width: 100dvw; height: 100dvh; }
+  }
+  @supports not (height: 100dvh){
+    .site-bg{ width: 100vw; height: 100vh; }
+  }
+
+  /* Smooth card hover */
+  .card-hover { transition: transform .15s ease, box-shadow .15s ease; }
+  .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.35); }
+
+  /* ---------------- Glow ONLY on pick text ---------------- */
+  .neon-elim{
+    color:#ff3b3b;
+    text-shadow:0 0 6px rgba(255,0,0,.9),0 0 14px rgba(255,0,0,.6),0 0 24px rgba(255,0,0,.4);
+    animation: neonPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes neonPulse{
+    0%{ text-shadow:0 0 4px rgba(255,0,0,.5),0 0 8px rgba(255,0,0,.4),0 0 16px rgba(255,0,0,.2);}
+    50%{ text-shadow:0 0 10px rgba(255,0,0,1),0 0 22px rgba(255,0,0,.8),0 0 36px rgba(255,0,0,.6);}
+    100%{ text-shadow:0 0 4px rgba(255,0,0,.5),0 0 8px rgba(255,0,0,.4),0 0 16px rgba(255,0,0,.2);}
+  }
+  .neon-alive{
+    color:#5bff8a;
+    text-shadow:0 0 6px rgba(0,255,120,.9),0 0 14px rgba(0,255,120,.6),0 0 24px rgba(0,255,120,.4);
+    animation: neonPulseG 1.2s ease-in-out infinite;
+  }
+  @keyframes neonPulseG{
+    0%{ text-shadow:0 0 4px rgba(0,255,120,.5),0 0 8px rgba(0,255,120,.4),0 0 16px rgba(0,255,120,.2);}
+    50%{ text-shadow:0 0 10px rgba(0,255,120,1),0 0 22px rgba(0,255,120,.8),0 0 36px rgba(0,255,120,.6);}
+    100%{ text-shadow:0 0 4px rgba(0,255,120,.5),0 0 8px rgba(0,255,120,.4),0 0 16px rgba(0,255,120,.2);}
+  }
+
+  /* ---------------- Panels (yellow outline/dividers) ---------------- */
+  .panel-yellow{ background: rgba(0,0,0,.72); border:1px solid rgba(255,204,0,.6); border-radius:16px; }
+  .y-divider > * + *{ border-left:1px solid rgba(255,204,0,.55); }
+
+  /* Winner: neon gold glow */
+  .winner-glow{
+    animation: winPulse 1.4s ease-in-out infinite;
+    filter:
+      drop-shadow(0 0 7px rgba(250,204,21,.95))
+      drop-shadow(0 0 18px rgba(250,204,21,.55));
+  }
+  @keyframes winPulse{
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+
+  /* Hall of Fame winner avatar: icy blue glow (no surrounding card border) */
+  .ice-glow{
+    animation: icePulse 1.6s ease-in-out infinite;
+    filter: drop-shadow(0 0 7px rgba(125,211,252,.95)) drop-shadow(0 0 18px rgba(56,189,248,.65));
+  }
+  @keyframes icePulse{ 0%{ transform:scale(1);} 50%{ transform:scale(1.05);} 100%{ transform:scale(1);} }
+
+  /* Spoon: quirky wobble */
+  .spoon-wobble{
+    animation:wob 1.8s ease-in-out infinite;
+    filter: drop-shadow(0 0 4px rgba(255,99,132,.8)) drop-shadow(0 0 12px rgba(255,99,132,.5));
+  }
+  @keyframes wob{ 0%,100%{ transform:rotate(0deg);} 25%{ transform:rotate(2deg);} 75%{ transform:rotate(-2deg);} }
+
+  /* ---------------- Clean table styling (no table glow) ---------------- */
+  .picks-clean{
+    background: rgba(0,0,0,.72);
+    border: 1px solid rgba(255,204,0,.6);
+    border-radius: 16px;
+  }
+  .table-grid{
+    width:100%;
+    background: transparent;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .table-grid thead tr{ background: rgba(255,204,0,.08); }
+  .table-grid th, .table-grid td{
+    font-family:'Freshman', ui-sans-serif, system-ui;
+    letter-spacing:.02em;
+    padding:12px 16px;
+    border-right:1px solid rgba(255,204,0,.55);
+    border-bottom:1px solid rgba(255,204,0,.55);
+  }
+  .table-grid th{ color:#facc15; font-weight:800; }
+  .table-grid tr:last-child td{ border-bottom:0; }
+  .table-grid th:last-child, .table-grid td:last-child{ border-right:0; }
+
+  /* Reduced motion: disable animations */
+  @media (prefers-reduced-motion: reduce){
+    .neon-elim, .n eon-alive, .ice-glow, .spoon-wobble, .winner-glow { animation: none; }
+  }
+  </style>
+</head>
+
+<body class="min-h-screen text-white relative">
+  <!-- Background layer -->
+  <div class="site-bg" aria-hidden="true"></div>
+
+  <!-- Header -->
+  <header class="max-w-6xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 sm:grid-cols-3 items-center gap-y-2">
+    <div class="sm:col-start-2 sm:col-end-3 text-center">
+      <h1 class="font-black tracking-tight leading-[1.08] sm:leading-[1.05]"
+          style="font-family: Freshman, ui-sans-serif, system-ui">
+        <span class="block text-[28px] sm:text-5xl">Super Bowl LIX</span>
+        <span class="block text-[26px] sm:text-4xl">Elimination League</span>
+      </h1>
+      <p class="mt-1 text-xs sm:text-sm text-white/80 flex items-center justify-center gap-1">
+        <span>🏆</span> The road to victory starts here <span>🏆</span>
+      </p>
+    </div>
+
+    <a id="repoLink" href="#" target="_blank" rel="noopener"
+       class="justify-self-center sm:justify-self-end text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 hidden">
+      View Repo
+    </a>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 pb-24">
+    <!-- Player Picks FIRST -->
+    <section id="picksSection" class="card-hover rounded-2xl p-4 sm:p-6 mb-6 picks-clean">
+      <h2 class="text-xl sm:text-2xl font-bold mb-4" style="font-family: Freshman">Player Picks</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full border-separate border-spacing-0 table-grid">
+          <thead>
+            <tr>
+              <th class="text-left">Player</th>
+              <th class="text-center">
+                <div class="flex items-center gap-2 justify-center">
+                  <img src="Assets/afc.png" class="w-5 h-5" alt="AFC" />
+                  AFC Team
+                </div>
+              </th>
+              <th class="text-center">
+                <div class="flex items-center gap-2 justify-center">
+                  <img src="Assets/nfc.png" class="w-5 h-5" alt="NFC" />
+                  NFC Team
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="playerPicksBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Season Highlight & Hall of Fame AFTER the table -->
+    <section class="grid md:grid-cols-2 gap-4 md:gap-6 mt-6">
+      <!-- Season Highlight -->
+      <div class="panel-yellow card-hover p-4 sm:p-6">
+        <h2 class="text-xl sm:text-2xl font-bold mb-4" style="font-family: Freshman">Season Highlight</h2>
+        <div class="grid grid-cols-2 y-divider">
+          <div class="pr-3">
+            <p class="text-amber-400 font-semibold mb-2">Winner</p>
+            <div class="flex items-center gap-3">
+              <img id="seasonWinnerAvatar" src="Assets/winnertbc.png" alt="Winner avatar"
+                   class="winner-glow w-14 h-14 rounded-full ring-2 ring-amber-400 object-cover" />
+              <div>
+                <div id="seasonWinnerName" class="text-lg font-bold">TBC</div>
+                <div id="seasonWinnerTeam" class="text-xs text-white/60">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="pl-3">
+            <p class="text-rose-400 font-semibold mb-2">Spoon</p>
+            <div class="flex items-center gap-3">
+              <img id="seasonSpoonAvatar" src="Assets/losertbc.png" alt="Spoon avatar"
+                   class="spoon-wobble w-14 h-14 rounded-full ring-2 ring-rose-400 object-cover" />
+              <div>
+                <div id="seasonSpoonName" class="text-lg font-bold">TBC</div>
+                <div id="seasonSpoonTeam" class="text-xs text-white/60">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hall of Fame -->
+      <div class="panel-yellow card-hover p-4 sm:p-6">
+        <h2 class="text-xl sm:text-2xl font-bold mb-4" style="font-family: Freshman">Hall of Fame</h2>
+        <div id="hallOfFame" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // -------- Fallback data --------
+    const fallbackPlayers = [
+      { id: 'matt', name: 'Matt', avatar: 'Assets/matt.png',  team: '49ers',  teamLogo: 'Assets/49ers.png' },
+      { id: 'gaz',  name: 'Gaz',  avatar: 'Assets/gaz.png',   team: 'Bills',  teamLogo: 'Assets/Bills.png' },
+      { id: 'colesy', name: 'Colesy', avatar: 'Assets/coley.png', team: 'Vikings', teamLogo: 'Assets/Vikings.png' },
+      { id: 'jarv', name: 'Jarv', avatar: 'Assets/jarv.png',  team: 'Rams',   teamLogo: 'Assets/Rams.png' },
+      { id: 'joe',  name: 'Joe',  avatar: 'Assets/joe.png',   team: 'Lions',  teamLogo: 'Assets/Lions.png' },
+      { id: 'ben',  name: 'Ben',  avatar: 'Assets/ben.png',   team: 'Eagles', teamLogo: 'Assets/Eagles.png' },
+      { id: 'mark', name: 'Mark', avatar: 'Assets/mark.png',  team: 'Texans', teamLogo: 'Assets/Texans.png' }
+    ];
+    const fallbackConfig = {
+      season: '2025',
+      repoUrl: 'https://github.com/your/repo',
+      highlight: { winner: null, spoon: null },
+      honorary: [ { year: 2024, player: 'matt' } ]
+    };
+    const fallbackPicks = {
+      matt:{afcTeam:'Kansas City Chiefs', nfcTeam:'Detroit Lions'},
+      gaz:{afcTeam:'Buffalo Bills', nfcTeam:'Green Bay Packers'},
+      colesy:{afcTeam:'Denver Broncos', nfcTeam:'Minnesota Vikings'},
+      jarv:{afcTeam:'Baltimore Ravens', nfcTeam:'Los Angeles Rams'},
+      joe:{afcTeam:'Los Angeles Chargers', nfcTeam:'Tampa Bay Buccaneers'},
+      ben:{afcTeam:'Pittsburgh Steelers', nfcTeam:'Philadelphia Eagles'},
+      mark:{afcTeam:'Houston Texans', nfcTeam:'Washington Commanders'}
+    };
+    const fallbackEliminated = [
+      'Minnesota Vikings','Los Angeles Chargers','Pittsburgh Steelers','Denver Broncos',
+      'Green Bay Packers','Tampa Bay Buccaneers','Detroit Lions','Los Angeles Rams',
+      'Baltimore Ravens','Houston Texans'
+    ];
+
+    // -------- Utilities --------
+    async function fetchJson(path, fallback){
+      try { const res = await fetch(path, {cache:'no-store'}); if(!res.ok) throw 0; return await res.json(); }
+      catch { return structuredClone(fallback); }
+    }
+    function indexBy(arr, key='id'){ const m=new Map(); arr.forEach(o=>m.set(o[key],o)); return m; }
+    function slugifyTeam(name){
+      return String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+    }
+
+    // -------- Rendering: Player Picks --------
+    function renderPicks(players, picks, eliminated){
+      const tbody = document.getElementById('playerPicksBody');
+      if(!tbody) return;
+      const elim = new Set(eliminated||[]);
+      tbody.innerHTML='';
+
+      players.forEach(p=>{
+        const pk = picks[p.id] || {};
+        const afcElim = elim.has(pk.afcTeam);
+        const nfcElim = elim.has(pk.nfcTeam);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <div class="flex items-center gap-3">
+              <img src="${p.avatar}" alt="${p.name}" class="w-10 h-10 rounded-full object-cover" />
+              <div class="font-semibold">${p.name}</div>
+            </div>
+          </td>
+          <td>
+            <div class="flex items-center justify-center gap-2">
+              ${pk.afcTeam ? `<img src="Assets/teams/${slugifyTeam(pk.afcTeam)}.png"
+                    alt="${pk.afcTeam} logo" class="w-5 h-5 object-contain" onerror="this.style.display='none'">` : ''}
+              <span class="${afcElim ? 'line-through neon-elim font-semibold' : 'neon-alive font-semibold'}">
+                ${pk.afcTeam || '—'}
+              </span>
+            </div>
+          </td>
+          <td>
+            <div class="flex items-center justify-center gap-2">
+              ${pk.nfcTeam ? `<img src="Assets/teams/${slugifyTeam(pk.nfcTeam)}.png"
+                    alt="${pk.nfcTeam} logo" class="w-5 h-5 object-contain" onerror="this.style.display='none'">` : ''}
+              <span class="${nfcElim ? 'line-through neon-elim font-semibold' : 'neon-alive font-semibold'}">
+                ${pk.nfcTeam || '—'}
+              </span>
+            </div>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // -------- Highlight & Hall of Fame --------
+    function applyHighlights(players, config){
+      const pIndex = indexBy(players);
+      function setHighlight(role, id){
+        if(!id) return;
+        const elA=document.getElementById(role==='winner'?'seasonWinnerAvatar':'seasonSpoonAvatar');
+        const elN=document.getElementById(role==='winner'?'seasonWinnerName':'seasonSpoonName');
+        const elT=document.getElementById(role==='winner'?'seasonWinnerTeam':'seasonSpoonTeam');
+        const p=pIndex.get(id);
+        if(p){ if(elA) elA.src=p.avatar; if(elN) elN.textContent=p.name; if(elT) elT.textContent=p.team||''; }
+      }
+      setHighlight('winner', config?.highlight?.winner);
+      setHighlight('spoon',  config?.highlight?.spoon);
+
+      const hof=document.getElementById('hallOfFame');
+      if(hof){
+        hof.innerHTML='';
+        (config.honorary||[]).forEach(entry=>{
+          const p=pIndex.get(entry.player)||{ name: entry player, avatar:'Assets/winnertbc.png' };
+          const card=document.createElement('div');
+          /* no border/background, avatar matches Season Highlight */
+          card.className='flex flex-col items-center gap-2 p-3 text-center';
+          card.innerHTML = `
+            <img src="${p.avatar}" alt="${p.name}" class="ice-glow w-14 h-14 rounded-full object-cover ring-2 ring-sky-300"/>
+            <div class="text-xs text-white/70" style="font-family: Freshman">
+              Super Bowl ${config.season} Champion
+            </div>`;
+          hof.appendChild(card);
+        });
+      }
+    }
+
+    // -------- Init --------
+    async function init(){
+      try{
+        const [players, config, picks, eliminated] = await Promise.all([
+          fetchJson('players.json', fallbackPlayers),
+          fetchJson('config.json', fallbackConfig),
+          fetchJson('picks.json', fallbackPicks),
+          fetchJson('eliminatedTeams.json', fallbackEliminated)
+        ]);
+
+        const repoLink=document.getElementById('repoLink');
+        if (repoLink && config.repoUrl) { repoLink.href = config.repoUrl; repoLink.classList.remove('hidden'); }
+
+        applyHighlights(players, config);
+        renderPicks(players, picks, eliminated);
+      } catch(err){ console.error('Init error', err); }
+    }
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
